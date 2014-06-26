@@ -20,14 +20,15 @@ RTTaskList.prototype = {
         res.render('rttasks', {title: 'My To Do List'});
 
         //});
-
+        /*
         var q = new azure.TableQuery();
         q.where('completed eq ?', false);
         self.task.find(q, function(error, items) {
             self.sio.emit('alltasks', {
                 tasks: items
             });
-        });
+        });*/
+
     },
 
     addTask: function(req,res) {

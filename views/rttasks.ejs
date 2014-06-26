@@ -14,15 +14,28 @@
 
         var socket = io();
 
+        $.fn.serializeObject = function()
+        {
+            var o = {};
+            var a = this.serializeArray();
+            $.each(a, function() {
+                if (o[this.name] !== undefined) {
+                    if (!o[this.name].push) {
+                        o[this.name] = [o[this.name]];
+                    }
+                    o[this.name].push(this.value || '');
+                } else {
+                    o[this.name] = this.value || '';
+                }
+            });
+            return o;
+        };
+
         $(function() {
 
-            var taskTable = $("#taskTable").DataTable();
-
-            //taskTable.row.add(['Trident','Internet Explorer 4.0','Win 95+','4']).draw();
-            function addTask(task) {
-                var rowData = [task.name._, task.category._, task.Timestamp._, task.completed._];
-                taskTable.row.add(rowData).draw();
-            }
+            var taskTable = $("#taskTable").DataTable( {
+                "order": [[ 2, "desc" ]]
+            });
 
             socket.on('alltasks', function (data) {
                 //console.log(data);
@@ -30,19 +43,26 @@
 
                 for(var i = 0; i < data.tasks.length; i++) {
                     var task = data.tasks[i];
-                    addTask(task);
+
+                    var rowData = [task.name._, task.category._, task.Timestamp._, task.completed._];
+                    //console.log('new task: ' + JSON.stringify(rowData));
+                    taskTable.row.add(rowData).draw();
                 }
             });
 
-            socket.on('newtask', function(data) {
-                addTask(data.task);
-                console.log('new task: ' + data.task);
-            })
-
-
             $("#taskForm").submit(function(event) {
                 event.preventDefault();
-                var postData = $(this).serialize();
+
+                var postData = $(this).serializeObject();
+
+                socket.emit('addtask', postData);
+
+                $("#taskModal").modal('hide');
+
+                return false;
+
+                /*
+                 var postData = $(this).serialize();
                 var formURL = $(this).attr("action");
                 $.ajax({
                     url: formURL,
@@ -61,9 +81,15 @@
                         //if fails
                         console.log(errorThrown);
                     }
-                });
+                });*/
             });
 
+            socket.on('newtask', function(data) {
+                console.log('new task: ' + JSON.stringify(data.task));
+                var task = data.task;
+                var rowData = [task.name, task.category, task.Timestamp, task.completed];
+                taskTable.row.add(rowData).draw();
+            });
 
             $("#taskListForm").on("change", "input[type=checkbox]", function(e) {
 
@@ -128,10 +154,10 @@
                     <form accept-charset="UTF-8" role="form" id="taskForm" method="post" action="/realtime/addtask">
                         <fieldset>
                             <div class="form-group">
-                                <input class="form-control" placeholder="Task" name="item[name]" type="text">
+                                <input class="form-control" placeholder="Task" name="name" type="text">
                             </div>
                             <div class="form-group">
-                                <input class="form-control" placeholder="Category" name="item[category]" type="text">
+                                <input class="form-control" placeholder="Category" name="category" type="text">
                             </div>
                             <button class="btn btn-lg btn-success btn-block has-spinner" type="submit" id="buttonSubmit">
                                 Submit

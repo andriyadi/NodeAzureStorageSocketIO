@@ -64,5 +64,17 @@ Task.prototype = {
                 callback(null);
             });
         });
+    },
+
+    removeTable: function(callback) {
+        self = this;
+        self.storageClient.deleteTable(self.tableName, function(error, resp) {
+            if (error) {
+                callback(error);
+            }
+            else {
+                callback(null, resp);
+            }
+        })
     }
 }
