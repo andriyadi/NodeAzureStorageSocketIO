@@ -24,7 +24,7 @@ var app = express();
 
 var http = require('http');
 var server = http.createServer(app);
-var sio = require('socket.io')(server);
+var sio = require('socket.io')(server, {'transports': ['websocket']});
 
 
 // view engine setup
