@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 var Task = require('./models/task');
 var task = new Task(azure.createTableService(accountName, accountKey), tableName, partitionKey);
 
-/*
+
 //TaskList routes
 var TaskList = require('./routes/tasklist');
 var taskList = new TaskList(task);
@@ -50,7 +50,7 @@ var taskList = new TaskList(task);
 app.get('/', taskList.showTasks.bind(taskList));
 app.post('/addtask', taskList.addTask.bind(taskList));
 app.post('/completetask', taskList.completeTask.bind(taskList));
-*/
+
 
 //Realtime Tasklist routes
 sio.on('connection', function (socket) {
