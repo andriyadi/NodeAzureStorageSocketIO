@@ -24,8 +24,8 @@ var app = express();
 
 var http = require('http');
 var server = http.createServer(app);
-var sio = require('socket.io')(server, {'transports': ['websocket']});
-
+//var sio = require('socket.io')(server, {'transports': ['websocket']});
+var sio = require('socket.io')(server);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
