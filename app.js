@@ -4,9 +4,9 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var _ = require('underscore');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+//var routes = require('./routes/index');
 
 //Azure-related
 var uuid = require('node-uuid');
@@ -44,7 +44,7 @@ var Task = require('./models/task');
 var task = new Task(azure.createTableService(accountName, accountKey), tableName, partitionKey);
 
 /*
-//delete table
+//delete table - to start over after bunch of shity data
 task.removeTable(function(err, resp) {
     console.log(err + " " + resp);
 })
@@ -59,13 +59,14 @@ app.post('/addtask', taskList.addTask.bind(taskList));
 app.post('/completetask', taskList.completeTask.bind(taskList));
 
 
-//Realtime Tasklist routes
+//Realtime Tasklist socket.io
 sio.on('connection', function (socket) {
     console.log("Connected");
 
     var q = new azure.TableQuery();
     q.where('completed eq ?', false);
     task.find(q, function(error, items) {
+
         socket.emit('alltasks', {
             tasks: items
         });
@@ -83,17 +84,28 @@ sio.on('connection', function (socket) {
                 throw error;
             }
 
-            item.Timestamp = new Date();
+            item.rowkey = submittedItemDesc.RowKey._;
+            item.timestamp = new Date();
 
-            //res.json({status: 'OK'});
-            //io.emit('newtask', { task: submittedItemDesc });
             io.emit('newtask', { task: item });
+        });
+    });
+
+    socket.on('completetask', function(data) {
+        console.log('task: ' + data);
+
+        task.updateItem(data, function itemsUpdated(error) {
+            if(error){
+
+            } else {
+                io.emit('taskcompleted', { rowkey: data });
+            }
         });
     });
 });
 
 app.get('/realtime', function(req, res) {
-    res.render('rttasks', {title: 'My To Do List'});
+    res.render('rttasks', {title: 'Collaborative To Do List in Realtime'});
 });
 
 /// catch 404 and forward to error handler

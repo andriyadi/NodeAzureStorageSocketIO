@@ -34,7 +34,21 @@
         $(function() {
 
             var taskTable = $("#taskTable").DataTable( {
-                "order": [[ 2, "desc" ]]
+                "order": [[ 2, "desc" ]],
+                "columns": [
+                    { data: 'name' },
+                    { data: 'category' },
+                    { data: 'timestamp' },
+                    { data: 'completed' }
+                ],
+                "columnDefs": [ {
+                    "targets": 3,
+                    //"data": "download_link",
+                    "render": function ( data, type, full, meta ) {
+                        //console.log(full + ' ' + data);
+                        return '<input type="checkbox" name="' + full.rowkey + '" value="' + data + '" ' + (data == "false"? "checked": "") + '/>';
+                    }
+                }]
             });
 
             socket.on('alltasks', function (data) {
@@ -44,7 +58,13 @@
                 for(var i = 0; i < data.tasks.length; i++) {
                     var task = data.tasks[i];
 
-                    var rowData = [task.name._, task.category._, task.Timestamp._, task.completed._];
+                    var rowData = {
+                        rowkey: task.RowKey._,
+                        name: task.name._,
+                        category: task.category._,
+                        timestamp: task.Timestamp._,
+                        completed: task.completed._
+                    };
                     //console.log('new task: ' + JSON.stringify(rowData));
                     taskTable.row.add(rowData).draw();
                 }
@@ -54,66 +74,50 @@
                 event.preventDefault();
 
                 var postData = $(this).serializeObject();
-
                 socket.emit('addtask', postData);
 
                 $("#taskModal").modal('hide');
-
                 return false;
-
-                /*
-                 var postData = $(this).serialize();
-                var formURL = $(this).attr("action");
-                $.ajax({
-                    url: formURL,
-                    type: 'POST',
-                    data: postData,
-                    success:function(data, textStatus, jqXHR)
-                    {
-                        //data: return data from server
-                        //console.log(data);
-                        if (data.status == "OK") {
-                            $("#taskModal").modal('hide');
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown)
-                    {
-                        //if fails
-                        console.log(errorThrown);
-                    }
-                });*/
             });
 
             socket.on('newtask', function(data) {
                 console.log('new task: ' + JSON.stringify(data.task));
                 var task = data.task;
-                var rowData = [task.name, task.category, task.Timestamp, task.completed];
+
+                var rowData = {
+                    rowkey: task.rowkey,
+                    name: task.name,
+                    category: task.category,
+                    timestamp: task.timestamp,
+                    completed: task.completed
+                };
+
                 taskTable.row.add(rowData).draw();
             });
 
             $("#taskListForm").on("change", "input[type=checkbox]", function(e) {
 
-                $("#taskListForm").submit();
-                /*
-                //console.log(this.name+' '+this.value+' '+this.checked);
+                console.log(this.name+' '+this.value+' '+this.checked);
 
-                var self = this;
-                var data = '{"' + self.name + '": "' + self.checked + '"}';
-                //console.log(data);
+                //emit socket to server
+                socket.emit('completetask', this.name);
+            });
 
-                //submit
-                $.ajax({
-                    url: '/completeTask',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: data
-                }).done(function(data) {
+            socket.on('taskcompleted', function(data) {
+                console.log('completed task key: ' + data.rowkey);
+                var allData = taskTable.data();
+                var idx = -1;
+                for(var i = 0; i < allData.length; i++) {
+                    if (allData[i].rowkey === data.rowkey) {
+                        idx = i;
+                        break;
+                    }
+                }
 
-
-                }).error(function(error) {
-                    console.log(error);
-                })
-                */
+                if (idx > -1) {
+                    var selRow = taskTable.row(idx);
+                    selRow.remove().draw();
+                }
             });
         });
 
@@ -127,7 +131,7 @@
         New Task
     </button>
     <br/><br/>
-    <form action="/completeTask" method="post" id="taskListForm">
+    <form id="taskListForm">
         <table class="table table-striped table-bordered" id="taskTable">
             <thead>
             <tr>
@@ -159,7 +163,7 @@
                             <div class="form-group">
                                 <input class="form-control" placeholder="Category" name="category" type="text">
                             </div>
-                            <button class="btn btn-lg btn-success btn-block has-spinner" type="submit" id="buttonSubmit">
+                            <button class="btn btn-lg btn-success btn-block" type="submit" id="buttonSubmit">
                                 Submit
                             </button>
                         </fieldset>
