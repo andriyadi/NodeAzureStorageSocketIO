@@ -1,6 +1,0 @@
-{
-    "STORAGE_NAME": "azuretoolkit",
-    "STORAGE_KEY": "BIkQmvD45mSt8i9mCNTh2q3dS20dU5LWIU2CMFLqdLBzkjy0jo03+CSLzCgKwFVhAPTXQLxv7gUu/p9+MauRLg==",
-    "PARTITION_KEY": "mytasks",
-    "TABLE_NAME": "tasks"
-}
